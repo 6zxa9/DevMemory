@@ -62,6 +62,12 @@ cp skills/rag-knowledge/SKILL.md ~/.claude/skills/rag-knowledge/
 # Rule (auto-activates in every project)
 mkdir -p ~/.claude/rules
 cp rules/rag-knowledge.md ~/.claude/rules/
+
+# Hooks (session enforcement)
+mkdir -p ~/.claude/hooks
+cp hooks/devmemory-session-start.sh ~/.claude/hooks/
+cp hooks/devmemory-reminder.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/devmemory-*.sh
 ```
 
 **3. Install Python dependencies:**
@@ -176,6 +182,53 @@ python ~/.claude/tools/pinecone-store.py delete --id "old_entry"
 python ~/.claude/tools/pinecone-store.py delete --prefix "deprecated_"
 ```
 
+## Hooks (Enforcement)
+
+DevMemory includes Claude Code hooks that enforce the workflow at session boundaries. The installer copies them to `~/.claude/hooks/`, but you need to register them in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/devmemory-session-start.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/devmemory-reminder.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+- **SessionStart** — Injects a DevMemory reminder into Claude's context at every session start
+- **Stop** — Verifies the DevMemory workflow was followed before session ends
+
+## TTL & Freshness Tracking
+
+Every entry stored in DevMemory includes metadata for staleness detection:
+
+| Field | Purpose | Example |
+|-------|---------|---------|
+| `verified_libs` | Libraries with pinned versions | `"drizzle-orm@0.30, react@19"` |
+| `verified_date` | When the entry was last verified | `"2026-03-15"` |
+| `ttl_check_after` | Revalidation deadline (+6 months) | `"2026-09-15"` |
+| `description_ru` | Russian description for bilingual search | `"Ленивая регенерация энергии..."` |
+
+When `ttl_check_after` has passed, DevMemory flags the entry as "needs revalidation" and forces a Context7 cross-check before using it.
+
 ## What's Inside
 
 ### Skill
@@ -185,6 +238,11 @@ python ~/.claude/tools/pinecone-store.py delete --prefix "deprecated_"
 ### Rule
 
 - **rag-knowledge.md** — Global rule that activates the skill in every project automatically
+
+### Hooks
+
+- **devmemory-session-start.sh** — SessionStart hook that injects DevMemory context
+- **devmemory-reminder.sh** — Stop hook that verifies workflow compliance
 
 ### CLI Tool
 
