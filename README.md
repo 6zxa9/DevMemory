@@ -24,13 +24,53 @@ Every entry includes: **real code** + **WHY it works** + **what was REJECTED** +
 
 ## Installation
 
-### Prerequisites
+### Quick Install (macOS / Linux)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/6zxa9/DevMemory/main/install.sh | bash
+```
+
+### Quick Install (Windows PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/6zxa9/DevMemory/main/install.ps1 | iex
+```
+
+### Manual Install
+
+If you prefer to install manually or want to inspect what goes where:
+
+**1. Clone the repo:**
+
+```bash
+git clone https://github.com/6zxa9/DevMemory.git
+cd DevMemory
+```
+
+**2. Copy files to Claude Code directories:**
+
+```bash
+# CLI tool
+mkdir -p ~/.claude/tools
+cp tools/pinecone-store.py ~/.claude/tools/
+cp tools/requirements.txt ~/.claude/tools/
+
+# Skill
+mkdir -p ~/.claude/skills/rag-knowledge
+cp skills/rag-knowledge/SKILL.md ~/.claude/skills/rag-knowledge/
+
+# Rule (auto-activates in every project)
+mkdir -p ~/.claude/rules
+cp rules/rag-knowledge.md ~/.claude/rules/
+```
+
+**3. Install Python dependencies:**
 
 ```bash
 pip install pinecone python-dotenv
 ```
 
-### 1. Set up credentials
+### Set Up Pinecone Credentials
 
 Create `~/.claude/tools/.env`:
 
@@ -39,26 +79,15 @@ PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_HOST=your_pinecone_host_url
 ```
 
-### 2. Install the CLI tool
-
-```bash
-cp tools/pinecone-store.py ~/.claude/tools/pinecone-store.py
-cp tools/requirements.txt ~/.claude/tools/requirements.txt
-```
-
-### 3. Install the skill and rule
-
-```bash
-mkdir -p ~/.claude/skills/rag-knowledge
-cp skills/rag-knowledge/SKILL.md ~/.claude/skills/rag-knowledge/SKILL.md
-cp rules/rag-knowledge.md ~/.claude/rules/rag-knowledge.md
-```
-
-### 4. Verify
+### Verify Installation
 
 ```bash
 python ~/.claude/tools/pinecone-store.py info
 ```
+
+You should see your index stats with namespace counts. If you see an error, check your `.env` credentials.
+
+DevMemory will now automatically activate in every Claude Code project. No configuration needed.
 
 ## The Core Workflow
 
@@ -186,7 +215,7 @@ DevMemory uses [Pinecone](https://www.pinecone.io/) as its vector database with 
 
 1. Fork the repository
 2. Add your patterns/improvements
-3. Follow the entry format in `skills/rag-knowledge/SKILL.md` (Section 4)
+3. Follow the entry format in [`docs/ENTRY-FORMAT.md`](docs/ENTRY-FORMAT.md)
 4. Submit a PR
 
 ## License
