@@ -50,8 +50,16 @@ load_dotenv(Path(__file__).parent / ".env")
 
 from pinecone import Pinecone, EmbedModel
 
-PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
-PINECONE_HOST = os.environ["PINECONE_HOST"]
+try:
+    PINECONE_API_KEY = os.environ["PINECONE_API_KEY"]
+except KeyError:
+    print("ERROR: PINECONE_API_KEY not found. Create ~/.claude/tools/.env with your credentials")
+    sys.exit(1)
+try:
+    PINECONE_HOST = os.environ["PINECONE_HOST"]
+except KeyError:
+    print("ERROR: PINECONE_HOST not found. Create ~/.claude/tools/.env with your credentials")
+    sys.exit(1)
 
 # All available namespaces
 NS_COMPETITORS = "competitors"
@@ -519,7 +527,11 @@ def cmd_store(files: list[str]):
     """Store competitor scan JSONs."""
     pc, idx = _client()
     for fpath in files:
-        data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        try:
+            data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse JSON in '{fpath}': {e}")
+            continue
         chunks = _competitor_chunks(data)
         _embed_and_upsert(pc, idx, chunks, NS_COMPETITORS)
 
@@ -528,7 +540,11 @@ def cmd_store_audit(files: list[str]):
     """Store game audit JSONs."""
     pc, idx = _client()
     for fpath in files:
-        data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        try:
+            data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse JSON in '{fpath}': {e}")
+            continue
         chunks = _audit_chunks(data)
         _embed_and_upsert(pc, idx, chunks, NS_AUDITS)
 
@@ -537,7 +553,11 @@ def cmd_store_lessons(files: list[str]):
     """Store dev lessons JSONs."""
     pc, idx = _client()
     for fpath in files:
-        data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        try:
+            data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse JSON in '{fpath}': {e}")
+            continue
         chunks = _lesson_chunks(data)
         _embed_and_upsert(pc, idx, chunks, NS_LESSONS)
 
@@ -546,7 +566,11 @@ def cmd_store_patterns(files: list[str]):
     """Store design pattern JSONs."""
     pc, idx = _client()
     for fpath in files:
-        data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        try:
+            data = json.loads(Path(fpath).read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Failed to parse JSON in '{fpath}': {e}")
+            continue
         chunks = _pattern_chunks(data)
         _embed_and_upsert(pc, idx, chunks, NS_PATTERNS)
 
@@ -579,7 +603,7 @@ def _parse_filter(filter_str: str | None) -> dict | None:
 
 def cmd_query(question: str, top_k: int = 10, namespace: str | None = None,
               filter_str: str | None = None, verbose: bool = False,
-              json_output: bool = False):
+              json_output: bool = False, timeout: int = 10):
     """Query one or all namespaces."""
     pc, idx = _client()
     emb = pc.inference.embed(
@@ -600,8 +624,14 @@ def cmd_query(question: str, top_k: int = 10, namespace: str | None = None,
 
     all_matches = []
     for ns in namespaces:
-        res = idx.query(vector=vec, top_k=top_k, namespace=ns,
-                        include_metadata=True, filter=filt)
+        try:
+            res = idx.query(vector=vec, top_k=top_k, namespace=ns,
+                            include_metadata=True, filter=filt)
+        except Exception as e:
+            if "timed out" in str(e).lower() or "timeout" in str(e).lower():
+                print(f"  WARNING: Query to '{ns}' timed out after {timeout}s, skipping")
+                continue
+            raise
         for m in res.matches:
             all_matches.append((ns, m))
 
@@ -783,6 +813,8 @@ Examples:
     q.add_argument("-v", "--verbose", action="store_true")
     q.add_argument("--json", dest="json_output", action="store_true",
                    help="Output as JSON array")
+    q.add_argument("--timeout", type=int, default=10,
+                   help="Query timeout in seconds (default: 10)")
 
     # list
     ls = sub.add_parser("list", help="List vector IDs in namespace")
@@ -814,7 +846,7 @@ Examples:
         cmd_store_docs(args.files)
     elif args.cmd == "query":
         cmd_query(args.question, args.top_k, args.ns,
-                  args.filter_str, args.verbose, args.json_output)
+                  args.filter_str, args.verbose, args.json_output, args.timeout)
     elif args.cmd == "list":
         cmd_list(args.ns, args.prefix, args.limit)
     elif args.cmd == "delete":

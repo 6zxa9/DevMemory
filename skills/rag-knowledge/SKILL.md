@@ -89,8 +89,8 @@ Embedding: Multilingual_E5_Large (Pinecone hosted)
 3. Сформировать запись по формату (см. Секция 4)
 4. Спросить: "Сохранить в базу знаний? [краткое описание записи]"
 5. При подтверждении:
-   a. Записать JSON в /tmp/rag_<date>_<topic>.json
-   b. python ~/.claude/tools/pinecone-store.py store-patterns /tmp/rag_<date>_<topic>.json
+   a. Записать JSON в системную temp-директорию (e.g., /tmp on Linux, %TEMP% on Windows): rag_<date>_<topic>.json
+   b. python ~/.claude/tools/pinecone-store.py store-patterns <temp_dir>/rag_<date>_<topic>.json
    c. Удалить временный файл
 6. Подтвердить: "Сохранено в Pinecone: [название], namespace: [ns]"
 ```
@@ -196,14 +196,15 @@ Embedding: Multilingual_E5_Large (Pinecone hosted)
 ```bash
 # Поиск (READ)
 python ~/.claude/tools/pinecone-store.py query "описание задачи" --ns all -v
-python ~/.claude/tools/pinecone-store.py query "energy system" --ns design_patterns --top-k 5 -v
+python ~/.claude/tools/pinecone-store.py query "energy system" --ns design_patterns --top-k 10 -v
 python ~/.claude/tools/pinecone-store.py query "Redis bugs" --ns dev_lessons --json
 
 # Запись (WRITE)
-python ~/.claude/tools/pinecone-store.py store-patterns /tmp/patterns.json
-python ~/.claude/tools/pinecone-store.py store-lessons /tmp/lessons.json
-python ~/.claude/tools/pinecone-store.py store-audit /tmp/audit.json
-python ~/.claude/tools/pinecone-store.py store-docs /tmp/doc.md
+# Write JSON to system temp directory (e.g., /tmp on Linux, %TEMP% on Windows)
+python ~/.claude/tools/pinecone-store.py store-patterns <temp_dir>/patterns.json
+python ~/.claude/tools/pinecone-store.py store-lessons <temp_dir>/lessons.json
+python ~/.claude/tools/pinecone-store.py store-audit <temp_dir>/audit.json
+python ~/.claude/tools/pinecone-store.py store-docs <temp_dir>/doc.md
 
 # Управление
 python ~/.claude/tools/pinecone-store.py info

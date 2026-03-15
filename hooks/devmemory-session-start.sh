@@ -5,7 +5,7 @@
 cat <<'EOF'
 [DevMemory Active] RAG knowledge base is connected.
 Before implementing any non-trivial task:
-  python ~/.claude/tools/pinecone-store.py query "<task keywords>" --ns all --top-k 5 -v
+  python ~/.claude/tools/pinecone-store.py query "<task keywords>" --ns all --top-k 10 -v
 After user says "отлично"/"запиши"/"сохрани" → offer to save solution to Pinecone.
 Cross-check found solutions with Context7 (resolve-library-id → query-docs).
 EOF

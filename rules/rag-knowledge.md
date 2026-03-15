@@ -16,6 +16,7 @@
    - Сравнить: решение из базы vs актуальная документация
    - Предложить выбор: база / документация / гибрид
 3. Если не найдено — кратко сообщить и продолжить
+4. Если Pinecone недоступен или таймаут — сообщить и продолжить без RAG
 
 ### После успешного решения:
 
@@ -29,9 +30,10 @@
    - `ttl_check_after` — дата ревалидации (+6 месяцев от verified_date)
 5. Загрузить:
    ```bash
-   python ~/.claude/tools/pinecone-store.py store-patterns /tmp/rag_entry.json
+   # Write JSON to system temp directory (e.g., /tmp on Linux, %TEMP% on Windows)
+   python ~/.claude/tools/pinecone-store.py store-patterns <temp_dir>/rag_entry.json
    # или для багов:
-   python ~/.claude/tools/pinecone-store.py store-lessons /tmp/rag_lesson.json
+   python ~/.claude/tools/pinecone-store.py store-lessons <temp_dir>/rag_lesson.json
    ```
 
 ### Context7 сравнение (при каждом READ):
